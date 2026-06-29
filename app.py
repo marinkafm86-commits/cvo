@@ -318,7 +318,7 @@ if __name__ == '__main__':
 import urllib.request
 import json as json_lib
 
-ANTHROPIC_API_KEY = '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'
+ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
 
 @app.route('/claude', methods=['POST', 'OPTIONS'])
 def claude_proxy():
