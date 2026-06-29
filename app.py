@@ -312,3 +312,38 @@ def generate():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
+
+
+# ==================== ANTHROPIC PROXY ====================
+import urllib.request
+import json as json_lib
+
+ANTHROPIC_API_KEY = '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'
+
+@app.route('/claude', methods=['POST', 'OPTIONS'])
+def claude_proxy():
+    if request.method == 'OPTIONS':
+        return '', 200
+    try:
+        data = request.get_json(force=True)
+        body = json_lib.dumps({
+            'model': 'claude-sonnet-4-6',
+            'max_tokens': data.get('max_tokens', 4000),
+            'messages': data.get('messages', []),
+        }).encode('utf-8')
+
+        req = urllib.request.Request(
+            'https://api.anthropic.com/v1/messages',
+            data=body,
+            headers={
+                'Content-Type': 'application/json',
+                'x-api-key': ANTHROPIC_API_KEY,
+                'anthropic-version': '2023-06-01',
+            },
+            method='POST'
+        )
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            result = json_lib.loads(resp.read().decode('utf-8'))
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
